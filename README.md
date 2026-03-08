@@ -1,5 +1,40 @@
-# dbm_proj1
-Big Data Management course Project 1
+## Setup and How to Run
+
+### Step 1: Start Jupyter with Docker Compose
+
+In the folder that contains `compose.yml`, run:
+
+```bash
+docker compose up -d
+```
+
+Then open:
+
+```bash
+http://localhost:8888
+```
+
+Token:
+
+```bash
+bdm
+```
+
+To stop:
+
+```bash
+docker compose down
+```
+
+### Step 2: Open and Run the Notebook
+
+In JupyterLab:
+
+  1. Open the work/src/ folder
+  2. Open Untitled.ipynb
+  3. Click Run → Run All Cells
+
+---
 
 ## 2. Data Transformation
 
@@ -135,7 +170,7 @@ dedup_key = [
 Duplicates are removed using:
 
 ```python
-dropDuplicates(subset=dedup_key)
+.dropDuplicates(subset=dedup_key)
 ```
 
 ### Rationale
