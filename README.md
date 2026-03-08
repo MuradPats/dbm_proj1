@@ -268,3 +268,10 @@ For each new file we do:
 - add to manifest
 
 
+
+## Screenshots and optimizations
+
+Screenshots are in screenshots directory  
+Tried broadcast join on the lookup zones difference was unremarkable  
+Tried changing the amount of partitions, did not make much of a difference
+
