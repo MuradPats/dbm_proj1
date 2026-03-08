@@ -306,7 +306,7 @@ Our rules filtered out approximately **4.26%** of the raw input data.
 
 ## Screenshots and optimizations
 
-Screenshots are in screenshots directory  
+Screenshots are in screenshots directory (we uploaded printed versions of the pages, since they were too big to screenshot)
 Tried broadcast join on the lookup zones difference was unremarkable  
 Tried changing the amount of partitions, did not make much of a difference
 
