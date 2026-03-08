@@ -259,3 +259,12 @@ Each processed file entry contains:
 | `rows_after_dedup` | Rows remaining after deduplication |
 | `duplicates_dropped` | Number of duplicate records removed |
 
+
+## 5 Main loop
+For each new file we do:
+- read a file
+- process file
+- append to output
+- add to manifest
+
+
