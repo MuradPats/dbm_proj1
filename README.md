@@ -268,6 +268,41 @@ For each new file we do:
 - add to manifest
 
 
+## Correctness
+
+### Row Count Audit
+
+The pipeline processed two monthly files in this run. The following table tracks the data flow through the cleaning and deduplication stages.
+
+| File Name | Input Rows | After Cleaning | After Dedup | Final Output |
+| --- | --- | --- | --- | --- |
+| `yellow_tripdata_2025-01.parquet` | 3,475,226 | 3,325,822 | 3,325,815 | 3,325,815 |
+| `yellow_tripdata_2025-02.parquet` | 3,577,543 | 3,426,518 | 3,426,510 | 3,426,510 |
+| **Total** | **7,052,769** | **6,752,340** | **6,752,325** | **6,752,325** |
+
+### Data Cleaning Rules & Evidence
+
+Our rules filtered out approximately **4.26%** of the raw input data.
+
+* **Rule 1: Validity Filter**: Dropped rows with null IDs/timestamps or non-positive distances/fares.
+* **Rule 2: Enrichment Integrity**: As evidenced by the output logs, there were **0 missing pickup or dropoff zones** after joining with the lookup table, confirming that our cleaning successfully removed invalid LocationIDs before the join.
+* **Rule 3: Deduplication**: Using a composite key of Vendor, timestamps, and locations, we identified and removed **15 duplicate records** (7 from Jan, 8 from Feb).
+
+### "Bad Row" Examples
+
+1. **Zero Distance Trips**: Records where `trip_distance` was 0.0 despite having valid timestamps. These were excluded as noise.
+2. **Negative Totals**: Rows with negative `total_amount` values (likely refunds) were filtered to maintain a focus on active revenue trips.
+
+---
+
+## Performance
+
+### Job Execution Metrics
+
+* **Total Runtime**: ~22 seconds for the logic execution (based on `processed_at` timestamps showing ~10-11 seconds per file).
+* **Throughput**: Processing approximately **320,000 rows per second**.
+
+---
 
 ## Screenshots and optimizations
 
