@@ -2,7 +2,7 @@
 
 ### Step 1: Start Jupyter with Docker Compose
 
-In the folder that contains `compose.yml`, run:
+In the folder that contains `docker-compose.yml`, run:
 
 ```bash
 docker compose up -d
@@ -175,6 +175,9 @@ Duplicates are removed using:
 
 ### Rationale
 
-This composite key assumes that the probability of the same taxi vendor performing two separate trips **starting at the exact same second**, **ending at the exact same second**, and **between the same pickup and dropoff zones** is effectively zero.
+This composite key assumes that the probability of the same taxi vendor performing two separate trips **starting at the exact same second**, **ending at the exact same second**, and **between the same pickup and dropoff zones** is effectively zero. Therefore, records sharing all these attributes are considered duplicates and only one is retained.
 
-Therefore, records sharing all these attributes are considered duplicates and only one is retained.
+**Note on Deduplication Scope**
+
+Deduplication is performed only within the currently processed dataset, not against previously processed output files. The project brief does not specify a requirement in maintaining a global deduplication state across historical data. Implementing cross-file deduplication would require additional mechanisms (e.g., maintaining a persistent index, performing merge operations, or re-reading historical partitions), which would add complexity and computational overhead to the pipeline. For the purposes of this project, the pipeline assumes that duplicate records are most likely to occur **within newly ingested data**, and therefore removes duplicates using the defined composite key during the current transformation step.
+
