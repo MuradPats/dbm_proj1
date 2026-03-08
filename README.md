@@ -36,6 +36,37 @@ In JupyterLab:
 
 ---
 
+
+## 1. Incremental Ingestion
+
+The pipeline processes taxi trip files incrementally from the `data/inbox/` directory. Each run checks which input files have already been processed and only processes newly arrived files.
+
+### File Discovery
+
+All Parquet files in the inbox directory are scanned:
+
+```python
+trip_files = sorted(INBOX.glob("*.parquet"))
+````
+Previously processed files are tracked in a manifest file located at:  
+```
+state/manifest.json  
+````
+
+The manifest contains metadata about each processed input file.  
+```python
+processed_files = {entry["filename"] for entry in manifest["processed_files"]}
+````
+New files are determined by excluding those already present in the manifest:
+```python
+new_files = [f for f in trip_files if f.name not in processed_files]
+````
+### Incremental Processing.  
+
+Each new file is processed independently. For every file:  
+- The Parquet file is read into a Spark DataFrame.
+- 'source_file` and `ingested_at` metadata columns are added
+
 ## 2. Data Transformation
 
 The `transform()` function performs schema normalization, data cleaning, and deduplication on raw taxi trip records before writing the processed dataset to the output storage in Parquet format.
@@ -180,4 +211,51 @@ This composite key assumes that the probability of the same taxi vendor performi
 **Note on Deduplication Scope**
 
 Deduplication is performed only within the currently processed dataset, not against previously processed output files. The project brief does not specify a requirement in maintaining a global deduplication state across historical data. Implementing cross-file deduplication would require additional mechanisms (e.g., maintaining a persistent index, performing merge operations, or re-reading historical partitions), which would add complexity and computational overhead to the pipeline. For the purposes of this project, the pipeline assumes that duplicate records are most likely to occur **within newly ingested data**, and therefore removes duplicates using the defined composite key during the current transformation step.
+
+
+## 3. Data Enrichment
+
+After cleaning and deduplication, each trip record is enriched with metadata from Taxi Zone lookup table.
+
+The lookup dataset contains mappings between `LocationID` values and human-readable zone information.
+
+### Pickup and Dropoff Enrichment
+
+The lookup table is joined twice:
+
+1. **Pickup zone enrichment**
+2. **Dropoff zone enrichment**
+
+Separate aliases are created to avoid column conflicts.
+
+Implementation:
+
+```python
+.join(F.broadcast(pu_zones), trips_final["PULocationID"] == pu_zones["pu_location_id_lookup"], "left")
+.join(F.broadcast(do_zones), trips_final["DOLocationID"] == do_zones["do_location_id_lookup"], "left")
+````
+The taxi zone lookup table is small relative to the trip dataset. A broadcast join is used to avoid shuffling the larger dataset.
+
+## 4. Manifest + Custom Scenario
+
+The pipeline maintains processing state using a manifest file located at:
+````
+state/manifest.json
+````
+
+The manifest tracks which input files have already been processed, ensuring the pipeline operates incrementally and avoids reprocessing the same files.
+
+### Manifest Structure
+
+Each processed file entry contains:
+
+| Field | Description |
+|------|------|
+| `filename` | Name of the processed input file |
+| `file_size` | File size in bytes |
+| `processed_at` | Timestamp when the file was processed |
+| `raw_row_count` | Number of rows read from the raw input file |
+| `rows_after_cleaning` | Rows remaining after data cleaning |
+| `rows_after_dedup` | Rows remaining after deduplication |
+| `duplicates_dropped` | Number of duplicate records removed |
 
